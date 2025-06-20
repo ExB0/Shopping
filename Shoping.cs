@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 public class Good
 {
-    public string Name { get; }
 
     public Good(string name)
     {
@@ -12,9 +11,19 @@ public class Good
 
         Name = name;
     }
+
+    public string Name { get; }
 }
 
-public class WareHouse
+public interface IWareHouse
+{
+    public void Delive(Good good, int count);
+    public bool HasEnough(Good good, int count);
+    public void Reserve(Good good, int count);
+    public void PrintStock();
+}
+
+public class WareHouse : IWareHouse
 {
     private Dictionary<string, int> _stock = new();
 
@@ -36,7 +45,7 @@ public class WareHouse
 
     public void Reserve(Good good, int count)
     {
-        if (!HasEnough(good, count))
+        if (HasEnough(good, count) == false)
             throw new InvalidOperationException($"Недостаточно товара {good.Name} на складе");
 
         _stock[good.Name] -= count;
@@ -45,18 +54,19 @@ public class WareHouse
     public void PrintStock()
     {
         Console.WriteLine("Общее количество товаров на складе");
+
         foreach (var pair in _stock)
             Console.WriteLine($"{pair.Key}: {pair.Value} штук.");
-        Console.WriteLine();
+
     }
 }
 
 public class Cart
 {
-    private Dictionary<string, int> _items = new();
-    private WareHouse _warehouse;
+    private readonly Dictionary<string, int> _items = new();
+    private readonly IWareHouse _warehouse;
 
-    public Cart(WareHouse warehouse)
+    public Cart(IWareHouse warehouse)
     {
 
         if (warehouse == null)
@@ -67,7 +77,7 @@ public class Cart
 
     public void Add(Good good, int count)
     {
-        if (!_warehouse.HasEnough(good, count))
+        if (_warehouse.HasEnough(good, count)==false)
             throw new InvalidOperationException($"Недостаточно товара {good.Name} на складе");
 
         if (_items.ContainsKey(good.Name))
@@ -99,7 +109,6 @@ public class Cart
 
 public class Order
 {
-    public string Paylink { get; }
 
     public Order(string paylink)
     {
@@ -109,13 +118,15 @@ public class Order
 
         Paylink = paylink;
     }
+
+    public string Paylink { get; }
 }
 
 public class Shop
 {
-    private WareHouse _warehouse;
+    private IWareHouse _warehouse;
 
-    public Shop(WareHouse warehouse)
+    public Shop(IWareHouse warehouse)
     {
 
         if (warehouse == null)
@@ -136,12 +147,14 @@ public class Shop
 }
 public class OnlineShopping
 {
-    Good iPhone12 = new Good("IPhone 12");
-    Good iPhone11 = new Good("IPhone 11");
+    public void Run()
+    {
+        Good iPhone12 = new Good("IPhone 12");
+        Good iPhone11 = new Good("IPhone 11");
 
-    WareHouse warehouse = new WareHouse();
+        WareHouse warehouse = new WareHouse();
 
-    Shop shop = new Shop(warehouse);
+        Shop shop = new Shop(warehouse);
 
         warehouse.Delive(iPhone12, 10);
         warehouse.Delive(iPhone11, 1);
@@ -149,7 +162,7 @@ public class OnlineShopping
         //Вывод всех товаров на складе с их остатком
 
         Cart cart = shop.Cart();
-       cart.Add(iPhone12, 4);
+        cart.Add(iPhone12, 4);
         cart.Add(iPhone11, 3); //при такой ситуации возникает ошибка так, как нет нужного количества товара на складе
 
         //Вывод всех товаров в корзине
@@ -158,3 +171,4 @@ public class OnlineShopping
 
         cart.Add(iPhone12, 9); //Ошибка, после заказа со склада убираются заказанные товары
     }
+}
